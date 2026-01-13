@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en" translate="no" class="notranslate">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="google" content="notranslate" />
+  <title>Heliroma — IFC 3D Viewer</title>
+  <meta name="description" content="Simple IFC 3D viewer (rotate/zoom/pan). Default IFC auto-loads." />
+  <style>
+    :root{
+      --bg:#0b1220; --text:#e5e7eb; --muted:#9ca3af;
+      --accent:#16a34a; --border:rgba(255,255,255,.10);
+      --danger:rgba(239,68,68,.55);
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+    #app{height:100%;display:grid;grid-template-rows:auto 1fr;}
+    header{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:10px 12px;border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0));
+    }
+    .brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);
+      box-shadow:0 0 0 4px rgba(22,163,74,.15);}
+    .title{font-weight:700;}
+    .subtitle{font-size:12px;color:var(--muted);margin-top:2px;}
+    .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+    button,.btn{
+      background:rgba(255,255,255,.06);color:var(--text);
+      border:1px solid var(--border);border-radius:10px;
+      padding:8px 10px;cursor:pointer;font-size:13px;
+      display:inline-flex;align-items:center;gap:8px;
+    }
+    .btn.primary{background:rgba(22,163,74,.15);border-color:rgba(22,163,74,.45);}
+    button:hover,.btn:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18);}
+    input[type=file]{display:none;}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;
+      border:1px solid var(--border);background:rgba(255,255,255,.05);font-size:12px;color:var(--muted);}
+    #viewer{position:relative;overflow:hidden;}
+    #canvas{width:100%;height:100%;display:block;}
+    .toast{
+      position:absolute;left:12px;bottom:12px;max-width:min(820px,calc(100% - 24px));
+      background:rgba(17,26,46,.92);border:1px solid var(--border);
+      border-radius:12px;padding:10px 12px;box-shadow:0 10px 35px rgba(0,0,0,.35);
+      font-size:13px;line-height:1.35;
+    }
+    .toast .small{font-size:12px;color:var(--muted);margin-top:6px;}
+    .toast code{color:#c7d2fe;}
+    .errorbar{
+      position:absolute;left:12px;top:12px;right:12px;
+      background:rgba(127,29,29,.88);
+      border:1px solid var(--danger);
+      border-radius:12px;padding:10px 12px;
+      box-shadow:0 10px 35px rgba(0,0,0,.35);
+      display:none; z-index:5;
+    }
+    .errorbar strong{display:block;margin-bottom:4px}
+    @media (max-width:760px){
+      header{flex-direction:column;align-items:flex-start;}
+      .controls{justify-content:flex-start;}
+    }
+  </style>
+</head>
+
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <span class="dot"></span>
+      <div>
+        <div class="title">Heliroma — IFC 3D Viewer</div>
+        <div class="subtitle">Rotate / Zoom / Pan • Default model auto-load</div>
+      </div>
+      <span class="badge" id="status">Starting…</span>
+    </div>
+
+    <div class="controls">
+      <label class="btn primary" for="fileInput" title="Load another IFC from your computer">📂 Load IFC</label>
+      <input id="fileInput" type="file" accept=".ifc" />
+      <button id="btnFit" title="Fit model to screen">⤢ Fit</button>
+      <button id="btnReset" title="Reset camera">↺ Reset</button>
+      <button id="btnEdges" title="Toggle edges">▦ Edges</button>
+      <button id="btnClear" title="Unload model">✕ Clear</button>
+    </div>
+  </header>
+
+  <div id="viewer">
+    <div class="errorbar" id="errBar">
+      <strong>Viewer error</strong>
+      <div id="errMsg">An unexpected error occurred.</div>
+      <div class="small" style="color:rgba(255,255,255,.85);margin-top:6px">
+        Tip: open DevTools → Console to see details.
+      </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="toast">
+      <strong>Controls</strong><br/>
+      • Drag = rotate • Scroll/pinch = zoom • Right-drag (or two-finger) = pan<br/>
+      <div class="small">
+        Default model: <code>Projeto_Objeto3D_Chat.ifc</code><br/>
+        You can also use “Load IFC” to open another file.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  // GitHub Pages-friendly ES module imports (CORS ok):
+  import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+  import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+  import { IFCLoader } from "https://cdn.jsdelivr.net/npm/web-ifc-three@0.0.152/dist/IFCLoader.js";
+
+  const statusEl = document.getElementById("status");
+  const canvas = document.getElementById("canvas");
+  const fileInput = document.getElementById("fileInput");
+  const btnFit = document.getElementById("btnFit");
+  const btnReset = document.getElementById("btnReset");
+  const btnEdges = document.getElementById("btnEdges");
+  const btnClear = document.getElementById("btnClear");
+  const errBar = document.getElementById("errBar");
+  const errMsg = document.getElementById("errMsg");
+
+  function showError(message){
+    errMsg.textContent = message;
+    errBar.style.display = "block";
+  }
+  function setStatus(text, ok=true){
+    statusEl.textContent = text;
+    statusEl.style.borderColor = ok ? "rgba(22,163,74,.45)" : "rgba(239,68,68,.55)";
+    statusEl.style.background = ok ? "rgba(22,163,74,.10)" : "rgba(239,68,68,.10)";
+    statusEl.style.color = ok ? "#d1fae5" : "#fee2e2";
+  }
+  window.addEventListener("error", (e)=>{
+    console.error(e.error || e.message);
+    showError(String(e.message || e.error || "Unknown error"));
+    setStatus("Error", false);
+  });
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1220);
+
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 5000);
+  camera.position.set(8, 8, 8);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.set(0, 0, 0);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 0.9));
+  const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+  dir.position.set(10, 20, 10);
+  scene.add(dir);
+
+  const grid = new THREE.GridHelper(50, 50, 0x223344, 0x162033);
+  grid.material.transparent = true;
+  grid.material.opacity = 0.35;
+  scene.add(grid);
+
+  const ifcLoader = new IFCLoader();
+  ifcLoader.ifcManager.setWasmPath("https://cdn.jsdelivr.net/npm/web-ifc@0.0.57/dist/");
+  ifcLoader.ifcManager.applyWebIfcConfig({ COORDINATE_TO_ORIGIN: true, USE_FAST_BOOLS: true });
+
+  let currentModel = null;
+  let currentEdges = null;
+
+  function resize(){
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener("resize", resize);
+
+  function fitToObject(obj){
+    const box = new THREE.Box3().setFromObject(obj);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    if (!isFinite(maxDim) || maxDim <= 0) return;
+
+    const fov = camera.fov * (Math.PI / 180);
+    let cameraZ = Math.abs((maxDim / 2) / Math.tan(fov / 2));
+    cameraZ *= 1.6;
+
+    camera.position.set(center.x + cameraZ, center.y + cameraZ * 0.35, center.z + cameraZ);
+    controls.target.copy(center);
+    controls.update();
+  }
+
+  function clearModel(){
+    if (currentEdges){
+      scene.remove(currentEdges);
+      currentEdges.geometry.dispose();
+      currentEdges.material.dispose();
+      currentEdges = null;
+    }
+    if (currentModel){
+      scene.remove(currentModel);
+      currentModel.traverse((child)=>{
+        if (child.geometry) child.geometry.dispose();
+        if (child.material){
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach(m=> m && m.dispose && m.dispose());
+        }
+      });
+      currentModel = null;
+    }
+    setStatus("No model loaded", false);
+  }
+
+  async function loadIfcFromUrl(url){
+    try{
+      errBar.style.display = "none";
+      setStatus("Loading default IFC…");
+      const model = await ifcLoader.loadAsync(url);
+      clearModel();
+      currentModel = model;
+      scene.add(model);
+      fitToObject(model);
+      setStatus("Model loaded", true);
+    }catch(err){
+      console.error(err);
+      showError("Failed to load the default IFC. Check console (Network/CORS) and file name.");
+      setStatus("Failed", false);
+    }
+  }
+
+  async function loadIfcFromFile(file){
+    try{
+      errBar.style.display = "none";
+      setStatus("Loading IFC…");
+      const url = URL.createObjectURL(file);
+      const model = await ifcLoader.loadAsync(url);
+      URL.revokeObjectURL(url);
+      clearModel();
+      currentModel = model;
+      scene.add(model);
+      fitToObject(model);
+      setStatus("Model loaded", true);
+    }catch(err){
+      console.error(err);
+      showError("Failed to load the IFC selected. Check console for details.");
+      setStatus("Failed", false);
+    }
+  }
+
+  function toggleEdges(){
+    if (!currentModel) return;
+    if (currentEdges){
+      scene.remove(currentEdges);
+      currentEdges.geometry.dispose();
+      currentEdges.material.dispose();
+      currentEdges = null;
+      return;
+    }
+    let mesh = currentModel.geometry ? currentModel : null;
+    if (!mesh){
+      currentModel.traverse(o=>{ if (!mesh && o.isMesh && o.geometry) mesh = o; });
+    }
+    if (!mesh || !mesh.geometry) return;
+
+    const geom = new THREE.EdgesGeometry(mesh.geometry, 25);
+    const mat = new THREE.LineBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.7 });
+    currentEdges = new THREE.LineSegments(geom, mat);
+    scene.add(currentEdges);
+  }
+
+  btnFit.addEventListener("click", ()=> { if (currentModel) fitToObject(currentModel); });
+  btnReset.addEventListener("click", ()=> { camera.position.set(8,8,8); controls.target.set(0,0,0); controls.update(); });
+  btnEdges.addEventListener("click", toggleEdges);
+  btnClear.addEventListener("click", clearModel);
+
+  fileInput.addEventListener("change", (e)=>{
+    const file = e.target.files && e.target.files[0];
+    if (file) loadIfcFromFile(file);
+    e.target.value = "";
+  });
+
+  function animate(){
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+
+  resize();
+  animate();
+
+  // Auto-load IFC from same folder (GitHub Pages)
+  loadIfcFromUrl("./Projeto_Objeto3D_Chat.ifc");
+</script>
+</body>
+</html>
