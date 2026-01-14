@@ -6,8 +6,19 @@
   <meta name="google" content="notranslate" />
   <title>Heliroma — IFC 3D Viewer</title>
 
-  <!-- Inline favicon (evita 404 do favicon.ico) -->
+  <!-- Inline favicon (avoids 404 favicon.ico) -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='%2306b26e'/%3E%3Cpath d='M20 34l7 7 17-19' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+  <!-- ✅ Import map (fixes: web-ifc-three uses bare 'three' imports internally) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/",
+      "web-ifc": "https://cdn.jsdelivr.net/npm/web-ifc@0.0.57/web-ifc-api.js"
+    }
+  }
+  </script>
 
   <style>
     :root{
@@ -111,8 +122,8 @@
 </div>
 
 <script type="module">
-  import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js";
-  import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js";
+  import * as THREE from "three";
+  import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
   import { IFCLoader } from "https://cdn.jsdelivr.net/npm/web-ifc-three@0.0.126/IFCLoader.js";
 
   const $ = (id) => document.getElementById(id);
@@ -174,7 +185,7 @@
     const box = new THREE.Box3().setFromObject(object3d);
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
 
     const fov = camera.fov * Math.PI / 180;
     let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
