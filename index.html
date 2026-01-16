@@ -11,79 +11,140 @@
   <!-- Import maps: make "three" and "web-ifc" resolvable in the browser -->
   <script type="importmap">
   {
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/",
-    "web-ifc": "https://cdn.jsdelivr.net/npm/web-ifc@0.0.74/web-ifc-api.js",
-    "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/",
-    "three/examples/jsm/utils/BufferGeometryUtils": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/utils/BufferGeometryUtils.js",
-    "three/examples/jsm/controls/OrbitControls": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js",
-    "three/examples/jsm/renderers/CSS2DRenderer": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/renderers/CSS2DRenderer.js"
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/",
+      "web-ifc": "https://cdn.jsdelivr.net/npm/web-ifc@0.0.74/web-ifc-api.js",
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/",
+      "three/examples/jsm/utils/BufferGeometryUtils": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/utils/BufferGeometryUtils.js",
+      "three/examples/jsm/controls/OrbitControls": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js",
+      "three/examples/jsm/renderers/CSS2DRenderer": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/renderers/CSS2DRenderer.js"
+    }
   }
-}
   </script>
 
   <style>
+    /* Page theme LIGHT by default; viewer background is controlled independently */
     :root{
-      --bg:#0b1220; --panel:#0f1b2d; --text:#e5e7eb; --muted:#9ca3af;
-      --accent:#16a34a; --border:rgba(255,255,255,.10);
-      --danger:#b91c1c;
+      --page-bg:#ffffff;
+      --text:#0f172a;
+      --muted:#475569;
+      --accent:#16a34a;
+      --border:rgba(15,23,42,.12);
       --radius:14px;
     }
-    html,body{height:100%; margin:0; background:var(--bg); color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+
+    html,body{
+      height:100%;
+      margin:0;
+      background:var(--page-bg);
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+
     #app{height:100%; display:grid; grid-template-rows:auto 1fr;}
+
     header{
       display:flex; align-items:center; justify-content:space-between;
       gap:12px; padding:10px 12px; border-bottom:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
+      background: linear-gradient(180deg, rgba(15,23,42,.05), rgba(15,23,42,0));
     }
+
     .brand{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
     .dot{width:10px; height:10px; border-radius:999px; background:var(--accent); box-shadow:0 0 0 6px rgba(22,163,74,.15);}
-    .title{font-weight:700;}
+    .title{font-weight:800;}
     .sub{color:var(--muted); font-size:12px;}
     .actions{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+    .spacer{flex:1;}
+
     button{
-      appearance:none; border:1px solid var(--border); background:rgba(255,255,255,.06);
-      color:var(--text); padding:7px 10px; border-radius:12px; cursor:pointer;
-      font-weight:600; font-size:13px; line-height:1;
+      appearance:none;
+      border:1px solid var(--border);
+      background:rgba(15,23,42,.04);
+      color:var(--text);
+      padding:7px 10px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:13px;
+      line-height:1;
     }
-    button.primary{background:rgba(22,163,74,.18); border-color:rgba(22,163,74,.35);}
+    button.primary{background:rgba(22,163,74,.14); border-color:rgba(22,163,74,.28);}
     button:disabled{opacity:.55; cursor:not-allowed;}
+
     #viewer{position:relative; height:100%;}
     canvas{display:block; width:100%; height:100%;}
+
     .help{
       position:absolute; left:14px; bottom:14px;
-      max-width:360px; padding:12px 12px;
-      border:1px solid var(--border); background:rgba(15,27,45,.72);
+      max-width:420px; padding:12px 12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.82);
       backdrop-filter: blur(10px);
       border-radius: var(--radius);
-      color:var(--muted); font-size:12px;
+      color:var(--muted);
+      font-size:12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.10);
     }
     .help b{color:var(--text);}
+
     .toast{
       position:absolute; top:12px; left:50%; transform:translateX(-50%);
       min-width: min(720px, calc(100vw - 24px));
       padding:10px 12px; border-radius: var(--radius);
-      border:1px solid rgba(255,255,255,.12);
+      border:1px solid rgba(15,23,42,.12);
       background: rgba(185,28,28,.92);
       color:#fff;
       display:none;
-      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      box-shadow: 0 12px 30px rgba(0,0,0,.20);
       font-size:13px;
       z-index:10;
     }
     .toast.show{display:block;}
+
     .pill{
       display:inline-flex; align-items:center; gap:8px;
-      padding:3px 10px; border-radius:999px;
+      padding:3px 10px;
+      border-radius:999px;
       border:1px solid var(--border);
-      background:rgba(255,255,255,.05);
+      background:rgba(15,23,42,.03);
       color:var(--muted);
       font-size:12px;
     }
-    .spacer{flex:1;}
+
     input[type="file"]{display:none;}
+
+    /* Basic viewer background control */
+    .bgctl{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:3px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(15,23,42,.03);
+      color:var(--muted);
+      font-size:12px;
+    }
+    .bgctl label{display:inline-flex; align-items:center; gap:8px; cursor:pointer;}
+    .bgctl input[type="color"]{
+      width:26px; height:20px;
+      padding:0; border:1px solid var(--border);
+      border-radius:6px;
+      background:transparent;
+      cursor:pointer;
+    }
+    .bgctl .preset{
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.75);
+      color:var(--text);
+      font-weight:700;
+      font-size:12px;
+      cursor:pointer;
+    }
+    .bgctl .preset:hover{background:rgba(255,255,255,.95);}
   </style>
 </head>
 <body>
@@ -101,6 +162,16 @@
 
       <div class="actions">
         <span id="status" class="pill">Starting…</span>
+
+        <span class="bgctl" title="Viewer background color">
+          <label for="bgColor">
+            Background
+            <input id="bgColor" type="color" value="#ffffff" aria-label="Viewer background color" />
+          </label>
+          <button class="preset" id="bgWhite" type="button" title="White">White</button>
+          <button class="preset" id="bgDark" type="button" title="Dark">Dark</button>
+        </span>
+
         <label>
           <input id="fileInput" type="file" accept=".ifc" />
           <button id="btnLoad" class="primary" type="button">Load IFC</button>
@@ -126,18 +197,17 @@
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-  // IFCLoader is best consumed via web-ifc-three when using only CDNs (GitHub Pages)
-  // because some CDN builds of three.js no longer ship the IFC loader example.
-  import { IFCLoader } from "https://cdn.jsdelivr.net/npm/web-ifc-three@0.0.126/IFCLoader.js";
+    import { IFCLoader } from "https://cdn.jsdelivr.net/npm/web-ifc-three@0.0.126/IFCLoader.js";
 
     // ---- Config ----
-    const DEFAULT_IFC_URL = "./Projeto_Objeto3D_Chat.ifc"; // must exist in repo root for auto-load
-    const WEB_IFC_WASM_PATH = "https://cdn.jsdelivr.net/npm/web-ifc@0.0.72/"; // IMPORTANT: must end with "/"
-    // Fallback color applied to meshes that arrive without an explicit IfcSurfaceStyle/IfcStyledItem
-    // (prevents 'default white' elements in some IFC exports).
-    const FALLBACK_GREEN_HEX = 0x70ad85; // (112,173,133)
+    const DEFAULT_IFC_URL = "./Projeto_Objeto3D_Chat.ifc";
+    const WEB_IFC_WASM_PATH = "https://cdn.jsdelivr.net/npm/web-ifc@0.0.72/";
+    const FALLBACK_GREEN_HEX = 0x70ad85;
 
-    // ---------------
+    // Background persistence
+    const BG_STORAGE_KEY = "heliroma_viewer_bg";
+    const DEFAULT_BG_HEX = "#ffffff";
+    const DARK_BG_HEX = "#0b1220";
 
     const el = {
       canvas: document.getElementById("canvas"),
@@ -149,7 +219,10 @@
       btnFit: document.getElementById("btnFit"),
       btnReset: document.getElementById("btnReset"),
       btnClear: document.getElementById("btnClear"),
-      defaultInfo: document.getElementById("defaultInfo")
+      defaultInfo: document.getElementById("defaultInfo"),
+      bgColor: document.getElementById("bgColor"),
+      bgWhite: document.getElementById("bgWhite"),
+      bgDark: document.getElementById("bgDark")
     };
 
     let scene, camera, renderer, controls;
@@ -159,9 +232,9 @@
 
     function setStatus(text, ok=true){
       el.status.textContent = text;
-      el.status.style.borderColor = ok ? "rgba(22,163,74,.35)" : "rgba(255,255,255,.12)";
-      el.status.style.color = ok ? "#d1fae5" : "#fee2e2";
-      el.status.style.background = ok ? "rgba(22,163,74,.12)" : "rgba(185,28,28,.35)";
+      el.status.style.borderColor = ok ? "rgba(22,163,74,.35)" : "rgba(15,23,42,.12)";
+      el.status.style.color = ok ? "#166534" : "#991b1b";
+      el.status.style.background = ok ? "rgba(22,163,74,.10)" : "rgba(185,28,28,.10)";
     }
 
     function showError(message, err){
@@ -176,8 +249,6 @@
     }
 
     function applyFallbackGreenToUnstyledMeshes(model){
-      // Heuristic: if a mesh material is the default white (1,1,1) with no texture and no vertex colors,
-      // treat it as "unstyled" and recolor it.
       const fallback = new THREE.Color(FALLBACK_GREEN_HEX);
 
       const isDefaultWhite = (mat) => {
@@ -198,39 +269,44 @@
         for (const m of mats){
           if (isDefaultWhite(m)){
             m.color.copy(fallback);
-            // keep a sensible look under PBR lighting
             if (typeof m.roughness === 'number') m.roughness = 0.65;
             if (typeof m.metalness === 'number') m.metalness = 0.05;
             m.needsUpdate = true;
             changed = true;
           }
         }
-
-        // Ensure the mesh isn't relying on vertex colors (which could also appear white)
-        if (changed) obj.material.needsUpdate = true;
+        if (changed && obj.material) obj.material.needsUpdate = true;
       });
     }
 
-    function init(){
-      // Scene
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0b1220);
+    function applyViewerBackground(hex){
+      const safeHex = (typeof hex === "string" && /^#([0-9a-fA-F]{6})$/.test(hex)) ? hex : DEFAULT_BG_HEX;
+      if (scene) scene.background = new THREE.Color(safeHex);
+      el.bgColor.value = safeHex;
+      try{ localStorage.setItem(BG_STORAGE_KEY, safeHex); }catch(_){}
+    }
 
-      // Camera
+    function init(){
+      scene = new THREE.Scene();
+
+      // Default = white, but allow saved preference
+      let stored = null;
+      try{ stored = localStorage.getItem(BG_STORAGE_KEY); }catch(_){}
+      const initialBg = (stored && /^#([0-9a-fA-F]{6})$/.test(stored)) ? stored : DEFAULT_BG_HEX;
+      scene.background = new THREE.Color(initialBg);
+      el.bgColor.value = initialBg;
+
       camera = new THREE.PerspectiveCamera(60, 1, 0.1, 2000);
       camera.position.set(6, 4, 8);
 
-      // Renderer
       renderer = new THREE.WebGLRenderer({ canvas: el.canvas, antialias: true, alpha: false });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
-      // Controls
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.06;
       controls.target.set(0, 1, 0);
 
-      // Lights
       const hemi = new THREE.HemisphereLight(0xffffff, 0x223344, 0.9);
       scene.add(hemi);
 
@@ -238,38 +314,34 @@
       dir.position.set(6, 10, 4);
       scene.add(dir);
 
-      // Grid
-      const grid = new THREE.GridHelper(40, 40, 0x1f2937, 0x111827);
+      // Grid subtle (para fundo branco)
+      const grid = new THREE.GridHelper(40, 40, 0x94a3b8, 0xcbd5e1);
       grid.material.opacity = 0.35;
       grid.material.transparent = true;
       scene.add(grid);
 
-      // IFC loader
       ifcLoader = new IFCLoader();
-      // This is the critical piece to avoid the "wasm 404 / compile failed" errors:
       ifcLoader.ifcManager.setWasmPath(WEB_IFC_WASM_PATH);
 
-      // UI wiring
       el.btnLoad.addEventListener("click", () => el.fileInput.click());
       el.fileInput.addEventListener("change", onPickFile);
-      el.btnFit.addEventListener("click", () => {
-        if (currentModel) fitToObject(currentModel);
-      });
+      el.btnFit.addEventListener("click", () => { if (currentModel) fitToObject(currentModel); });
       el.btnReset.addEventListener("click", resetCamera);
       el.btnClear.addEventListener("click", clearModel);
 
-      // Resize
+      // Background controls
+      el.bgColor.addEventListener("input", (e) => applyViewerBackground(e.target.value));
+      el.bgWhite.addEventListener("click", () => applyViewerBackground(DEFAULT_BG_HEX));
+      el.bgDark.addEventListener("click", () => applyViewerBackground(DARK_BG_HEX));
+
       window.addEventListener("resize", resize, { passive:true });
       resize();
 
-      // Render loop
       renderer.setAnimationLoop(tick);
 
-      // Default model info
       el.defaultInfo.textContent = `Default model: ${DEFAULT_IFC_URL.replace("./","")}`;
-
-      // Auto-load default model
       autoLoadDefault();
+      setStatus("Ready");
     }
 
     function resize(){
@@ -298,15 +370,11 @@
       clearError();
       if (currentModel){
         scene.remove(currentModel);
-        // dispose geometry/materials
         currentModel.traverse((obj) => {
           if (obj.isMesh){
             obj.geometry?.dispose?.();
-            if (Array.isArray(obj.material)){
-              obj.material.forEach(m => m?.dispose?.());
-            } else {
-              obj.material?.dispose?.();
-            }
+            if (Array.isArray(obj.material)) obj.material.forEach(m => m?.dispose?.());
+            else obj.material?.dispose?.();
           }
         });
         currentModel = null;
@@ -328,7 +396,7 @@
       const maxDim = Math.max(size.x, size.y, size.z);
       const fov = camera.fov * (Math.PI / 180);
       let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2)));
-      cameraZ *= 1.4; // padding
+      cameraZ *= 1.4;
 
       camera.position.set(center.x + cameraZ, center.y + cameraZ * 0.5, center.z + cameraZ);
       controls.target.copy(center);
@@ -340,7 +408,6 @@
       clearError();
       setStatus("Loading…");
       try{
-        // Use loader.load so relative URLs work naturally on GitHub Pages
         ifcLoader.load(
           DEFAULT_IFC_URL,
           (model) => {
@@ -383,17 +450,11 @@
       }catch(err){
         showError("Unexpected error while opening local IFC", err);
       } finally {
-        // allow re-selecting the same file
         e.target.value = "";
       }
     }
 
-    // Boot
-    try{
-      init();
-    }catch(err){
-      showError("Boot error", err);
-    }
+    try{ init(); }catch(err){ showError("Boot error", err); }
   </script>
 </body>
 </html>
